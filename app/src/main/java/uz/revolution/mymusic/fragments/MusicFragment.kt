@@ -72,10 +72,7 @@ class MusicFragment : Fragment() {
 
     private fun mediaEnded() {
         mediaPlayer!!.setOnCompletionListener {
-            mediaPlayer = null
-            currentPosition++
-            playMusic(currentPosition)
-            loadDataToView()
+            binding.playPause.setImageResource(R.drawable.ic_play2)
         }
     }
 
@@ -191,9 +188,9 @@ class MusicFragment : Fragment() {
     private fun replay30Click() {
         binding.replay30.setOnClickListener {
             if (mediaPlayer!!.isPlaying) {
-                mediaPlayer!!.seekTo(mediaPlayer?.currentPosition?.minus(3000)!!)
+                mediaPlayer!!.seekTo(mediaPlayer?.currentPosition?.minus(30000)!!)
             } else {
-                mediaPlayer!!.seekTo(mediaPlayer?.currentPosition?.minus(3000)!!)
+                mediaPlayer!!.seekTo(mediaPlayer?.currentPosition?.minus(30000)!!)
                 mediaPlayer!!.start()
                 binding.playPause.setImageResource(R.drawable.ic_pause_circle_filled)
             }
@@ -225,21 +222,30 @@ class MusicFragment : Fragment() {
 
     private fun playMusic(position: Int) {
 
-        if (mediaPlayer == null) {
-            mediaPlayer = MediaPlayer.create(binding.root.context, Uri.parse(data!![position].path))
-            mediaPlayer?.start()
-            binding.playPause.setImageResource(R.drawable.ic_pause_circle_filled)
-            binding.seekbar.max = mediaPlayer?.duration!!
-            handler.postDelayed(runnable, 100)
+        if (position < data!!.size && position >= 0) {
+            if (mediaPlayer == null) {
+                mediaPlayer =
+                    MediaPlayer.create(binding.root.context, Uri.parse(data!![position].path))
+                mediaPlayer?.start()
+                binding.playPause.setImageResource(R.drawable.ic_pause_circle_filled)
+                binding.seekbar.max = mediaPlayer?.duration!!
+                handler.postDelayed(runnable, 100)
+            }
+        } else {
+            currentPosition = 0
+            playMusic(currentPosition)
         }
+
     }
 
     @SuppressLint("SetTextI18n")
     private fun loadDataToView() {
-        binding.position.text = "${currentPosition + 1}/$size"
-        binding.name.text = data!![currentPosition].name
-        binding.artist.text = data!![currentPosition].artist
-        binding.duration.text = data!![currentPosition].duration
+        if (currentPosition < data!!.size && currentPosition>=0) {
+            binding.position.text = "${currentPosition + 1}/$size"
+            binding.name.text = data!![currentPosition].name
+            binding.artist.text = data!![currentPosition].artist
+            binding.duration.text = data!![currentPosition].duration
+        }
     }
 
     override fun onDestroy() {

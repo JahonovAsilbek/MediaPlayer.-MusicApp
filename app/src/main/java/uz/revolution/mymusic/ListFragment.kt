@@ -19,7 +19,6 @@ import uz.revolution.mymusic.adapters.MusicAdapter
 import uz.revolution.mymusic.daos.MusicDao
 import uz.revolution.mymusic.database.AppDatabase
 import uz.revolution.mymusic.databinding.FragmentListBinding
-import uz.revolution.mymusic.fragments.MusicFragment
 import uz.revolution.mymusic.models.MyMusic
 import java.util.concurrent.TimeUnit
 
@@ -71,12 +70,10 @@ class ListFragment : Fragment() {
             override fun onClick(myMusic: MyMusic, position: Int) {
                 val bundle = Bundle()
                 bundle.putSerializable("param1", myMusic)
-                bundle.putInt("param2",position)
-                bundle.putInt("param3",data!!.size)
+                bundle.putInt("param2", position)
+                bundle.putInt("param3", data!!.size)
                 findNavController().navigate(R.id.musicFragment, bundle)
             }
-
-
         }
     }
 
@@ -98,7 +95,6 @@ class ListFragment : Fragment() {
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             getAllMusic(context)
-
         } else {
             requestAudoiPermission()
         }
@@ -114,25 +110,53 @@ class ListFragment : Fragment() {
             )
         ) {
             val dialog = AlertDialog.Builder(binding.root.context)
-            dialog.setTitle("Permission required")
-            dialog.setMessage("Permission to access the external storage is required")
+            dialog.setTitle("Allow permission")
+            dialog.setMessage("Needed permission to access device external storage")
             dialog.setPositiveButton(
                 "OK"
             ) { p0, p1 ->
+
+
+
                 ActivityCompat.requestPermissions(
                     requireActivity(), arrayOf(
-                        Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
                     ), requestCode
                 )
+
                 p0.cancel()
+                checkPermission(binding.root.context)
             }
             dialog.show()
         } else {
             ActivityCompat.requestPermissions(
                 requireActivity(), arrayOf(
-                    Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
                 ), requestCode
             )
+//            val dialog = AlertDialog.Builder(binding.root.context)
+//            dialog.setTitle("Allow permission")
+//            dialog.setMessage("Needed permission to access device external storage")
+//            dialog.setPositiveButton(
+//                "OK"
+//            ) { p0, p1 ->
+//
+//                ActivityCompat.requestPermissions(
+//                    requireActivity(), arrayOf(
+//                        Manifest.permission.READ_EXTERNAL_STORAGE,
+//                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+//                    ), requestCode
+//                )
+//
+//                p0.cancel()
+//
+//
+//
+//            }
+//            dialog.show()
+            checkPermission(binding.root.context)
         }
     }
 
@@ -144,7 +168,7 @@ class ListFragment : Fragment() {
             ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
                 binding.root.context,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED  && getMusicDao!!.getAllMusic().isEmpty()
+            ) == PackageManager.PERMISSION_GRANTED && getMusicDao!!.getAllMusic().isEmpty()
         ) {
 
             val uri: Uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
@@ -219,7 +243,7 @@ class ListFragment : Fragment() {
         data = getMusicDao?.getAllMusic() as ArrayList
     }
 
-    companion object{
+    companion object {
 
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
