@@ -3,14 +3,17 @@ package uz.revolution.mymusic
 import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -21,6 +24,7 @@ import uz.revolution.mymusic.database.AppDatabase
 import uz.revolution.mymusic.databinding.FragmentListBinding
 import uz.revolution.mymusic.models.MyMusic
 import java.util.concurrent.TimeUnit
+
 
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
@@ -44,6 +48,8 @@ class ListFragment : Fragment() {
     private var database: AppDatabase? = null
     private var getMusicDao: MusicDao? = null
     private var requestCode = 1
+
+    var count = 0
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -124,6 +130,10 @@ class ListFragment : Fragment() {
                         Manifest.permission.WRITE_EXTERNAL_STORAGE
                     ), requestCode
                 )
+                count+=1
+                if (count == 2) {
+                    goToSettings()
+                }
 
                 p0.cancel()
                 checkPermission(binding.root.context)
@@ -241,6 +251,15 @@ class ListFragment : Fragment() {
         data = ArrayList()
         getMusicDao?.deleteEmptyMusic("--/--")
         data = getMusicDao?.getAllMusic() as ArrayList
+    }
+    private fun goToSettings() {
+        val myAppSettings = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.parse("package:" + requireActivity().getPackageName())
+        )
+        myAppSettings.addCategory(Intent.CATEGORY_DEFAULT)
+        myAppSettings.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(myAppSettings)
     }
 
     companion object {
