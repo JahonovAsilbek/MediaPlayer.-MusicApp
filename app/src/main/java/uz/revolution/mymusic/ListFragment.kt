@@ -131,7 +131,7 @@ class ListFragment : Fragment() {
                     ), requestCode
                 )
                 count+=1
-                if (count == 2) {
+                if (count >= 2) {
                     goToSettings()
                 }
 
