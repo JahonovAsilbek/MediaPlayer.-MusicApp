@@ -3,21 +3,18 @@ package uz.revolution.mymusic
 import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import com.github.florent37.runtimepermission.kotlin.askPermission
 import uz.revolution.mymusic.adapters.MusicAdapter
 import uz.revolution.mymusic.daos.MusicDao
 import uz.revolution.mymusic.database.AppDatabase
@@ -25,31 +22,13 @@ import uz.revolution.mymusic.databinding.FragmentListBinding
 import uz.revolution.mymusic.models.MyMusic
 import java.util.concurrent.TimeUnit
 
-
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
 class ListFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
 
     lateinit var binding: FragmentListBinding
     private var data: ArrayList<MyMusic>? = null
     private var adapter: MusicAdapter? = null
     private var database: AppDatabase? = null
     private var getMusicDao: MusicDao? = null
-    private var requestCode = 1
-
-    var count = 0
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -60,13 +39,9 @@ class ListFragment : Fragment() {
         adapter = MusicAdapter()
         loadDatabase()
         checkPermission(binding.root.context)
-        getAllMusic(binding.root.context)
         loadData()
         loadAdapter()
         itemClick()
-
-
-
 
         return binding.root
     }
@@ -92,81 +67,28 @@ class ListFragment : Fragment() {
     }
 
     private fun checkPermission(context: Context) {
-        if (ContextCompat.checkSelfPermission(
-                binding.root.context,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
-                binding.root.context,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
+
+        askPermission(Manifest.permission.READ_EXTERNAL_STORAGE) {
+            //all permissions already granted or just granted
             getAllMusic(context)
-        } else {
-            requestAudoiPermission()
-        }
-    }
+        }.onDeclined { e ->
+            if (e.hasDenied()) {
 
-    private fun requestAudoiPermission() {
-        if (ActivityCompat.shouldShowRequestPermissionRationale(
-                requireActivity(),
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ) && ActivityCompat.shouldShowRequestPermissionRationale(
-                requireActivity(),
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
-        ) {
-            val dialog = AlertDialog.Builder(binding.root.context)
-            dialog.setTitle("Allow permission")
-            dialog.setMessage("Needed permission to access device external storage")
-            dialog.setPositiveButton(
-                "OK"
-            ) { p0, p1 ->
-
-
-
-                ActivityCompat.requestPermissions(
-                    requireActivity(), arrayOf(
-                        Manifest.permission.READ_EXTERNAL_STORAGE,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    ), requestCode
-                )
-                count+=1
-                if (count >= 2) {
-                    goToSettings()
-                }
-
-                p0.cancel()
-                checkPermission(binding.root.context)
+                AlertDialog.Builder(context)
+                    .setMessage("Please accept our permissions")
+                    .setPositiveButton("yes") { dialog, which ->
+                        e.askAgain();
+                    } //ask again
+                    .setNegativeButton("no") { dialog, which ->
+                        dialog.dismiss();
+                    }
+                    .show();
             }
-            dialog.show()
-        } else {
-            ActivityCompat.requestPermissions(
-                requireActivity(), arrayOf(
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ), requestCode
-            )
-//            val dialog = AlertDialog.Builder(binding.root.context)
-//            dialog.setTitle("Allow permission")
-//            dialog.setMessage("Needed permission to access device external storage")
-//            dialog.setPositiveButton(
-//                "OK"
-//            ) { p0, p1 ->
-//
-//                ActivityCompat.requestPermissions(
-//                    requireActivity(), arrayOf(
-//                        Manifest.permission.READ_EXTERNAL_STORAGE,
-//                        Manifest.permission.WRITE_EXTERNAL_STORAGE
-//                    ), requestCode
-//                )
-//
-//                p0.cancel()
-//
-//
-//
-//            }
-//            dialog.show()
-            checkPermission(binding.root.context)
+
+            if (e.hasForeverDenied()) {
+                // you need to open setting manually if you really need it
+                e.goToSettings();
+            }
         }
     }
 
@@ -175,9 +97,6 @@ class ListFragment : Fragment() {
         if (ContextCompat.checkSelfPermission(
                 binding.root.context,
                 Manifest.permission.READ_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
-                binding.root.context,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
             ) == PackageManager.PERMISSION_GRANTED && getMusicDao!!.getAllMusic().isEmpty()
         ) {
 
@@ -251,26 +170,5 @@ class ListFragment : Fragment() {
         data = ArrayList()
         getMusicDao?.deleteEmptyMusic("--/--")
         data = getMusicDao?.getAllMusic() as ArrayList
-    }
-    private fun goToSettings() {
-        val myAppSettings = Intent(
-            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-            Uri.parse("package:" + requireActivity().getPackageName())
-        )
-        myAppSettings.addCategory(Intent.CATEGORY_DEFAULT)
-        myAppSettings.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        startActivity(myAppSettings)
-    }
-
-    companion object {
-
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            ListFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
     }
 }
