@@ -72,10 +72,21 @@ class MusicFragment : Fragment() {
 
     private fun mediaEnded() {
         mediaPlayer!!.setOnCompletionListener {
-            binding.playPause.setImageResource(R.drawable.ic_play2)
+//            binding.playPause.setImageResource(R.drawable.ic_play2)
+            if (mediaPlayer!!.isPlaying) {
+                mediaPlayer!!.stop()
+                mediaPlayer = null
+                currentPosition++
+                playMusic(currentPosition)
+                loadDataToView()
+            } else {
+                mediaPlayer = null
+                currentPosition++
+                playMusic(currentPosition)
+                loadDataToView()
+            }
         }
     }
-
 
     private fun seekBarChanging() {
         binding.seekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -144,17 +155,6 @@ class MusicFragment : Fragment() {
         }
     }
 
-    private fun realiseMp() {
-        if (mediaPlayer != null) {
-            try {
-                mediaPlayer!!.stop()
-                mediaPlayer == null
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
     private fun nextClick() {
         binding.next.setOnClickListener {
             if (mediaPlayer!!.isPlaying) {
@@ -177,10 +177,12 @@ class MusicFragment : Fragment() {
         binding.forward30.setOnClickListener {
             if (mediaPlayer!!.isPlaying) {
                 mediaPlayer?.seekTo(mediaPlayer?.currentPosition?.plus(30000)!!)
+                mediaEnded()
             } else {
                 mediaPlayer?.seekTo(mediaPlayer?.currentPosition?.plus(30000)!!)
                 mediaPlayer?.start()
                 binding.playPause.setImageResource(R.drawable.ic_pause_circle_filled)
+                mediaEnded()
             }
         }
     }
@@ -240,7 +242,7 @@ class MusicFragment : Fragment() {
 
     @SuppressLint("SetTextI18n")
     private fun loadDataToView() {
-        if (currentPosition < data!!.size && currentPosition>=0) {
+        if (currentPosition < data!!.size && currentPosition >= 0) {
             binding.position.text = "${currentPosition + 1}/$size"
             binding.name.text = data!![currentPosition].name
             binding.artist.text = data!![currentPosition].artist
@@ -248,8 +250,18 @@ class MusicFragment : Fragment() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onStop() {
+        super.onStop()
         realiseMp()
     }
+
+    private fun realiseMp() {
+        if (mediaPlayer!!.isPlaying) {
+            mediaPlayer?.release()
+            mediaPlayer = null
+        }
+        handler.removeCallbacks(runnable)
+        handler.removeCallbacksAndMessages(null)
+    }
+
 }

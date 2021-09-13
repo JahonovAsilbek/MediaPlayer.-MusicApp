@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -22,6 +23,7 @@ import uz.revolution.mymusic.databinding.FragmentListBinding
 import uz.revolution.mymusic.models.MyMusic
 import java.util.concurrent.TimeUnit
 
+
 class ListFragment : Fragment() {
 
     lateinit var binding: FragmentListBinding
@@ -29,13 +31,14 @@ class ListFragment : Fragment() {
     private var adapter: MusicAdapter? = null
     private var database: AppDatabase? = null
     private var getMusicDao: MusicDao? = null
+    lateinit var mmr: MediaMetadataRetriever
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentListBinding.inflate(layoutInflater, container, false)
-
+        mmr = MediaMetadataRetriever()
         adapter = MusicAdapter()
         loadDatabase()
         checkPermission(binding.root.context)
@@ -58,13 +61,6 @@ class ListFragment : Fragment() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        loadDatabase()
-        getAllMusic(binding.root.context)
-        loadData()
-        loadAdapter()
-    }
 
     private fun checkPermission(context: Context) {
 
@@ -116,7 +112,6 @@ class ListFragment : Fragment() {
             )
             if (cursor != null) {
                 while (cursor.moveToNext()) {
-                    val myMusic = MyMusic()
 
                     val path = cursor.getString(0)
                     val name = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.TITLE))
@@ -141,10 +136,17 @@ class ListFragment : Fragment() {
                         format = "--/--"
                     }
 
-                    myMusic.name = name.toString()
-                    myMusic.artist = artist.toString()
-                    myMusic.path = path.toString()
-                    myMusic.duration = format
+//                    mmr.setDataSource(path)
+//                    val data = mmr.embeddedPicture
+
+                    val myMusic =
+                        MyMusic(
+                            name.toString(),
+                            artist.toString(),
+                            format,
+                            path.toString(),
+                            null
+                        )
 
                     Log.d("AAAA", "name: $name, artist: $artist, duration: $format")
 
@@ -164,6 +166,7 @@ class ListFragment : Fragment() {
     private fun loadDatabase() {
         database = AppDatabase.get.getDatabase()
         getMusicDao = database!!.getMusicDao()
+        getMusicDao?.deleteAllData()
     }
 
     private fun loadData() {

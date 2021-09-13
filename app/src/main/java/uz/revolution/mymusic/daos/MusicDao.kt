@@ -12,9 +12,12 @@ interface MusicDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertMusic(myMusic: MyMusic)
 
-    @Query("SELECT * FROM music")
+    @Query("SELECT * FROM music order by name")
     fun getAllMusic(): List<MyMusic>
 
     @Query("DElETE FROM music WHERE duration=:duration")
-    fun deleteEmptyMusic(duration:String)
+    fun deleteEmptyMusic(duration: String)
+
+    @Query("DELETE FROM music")
+    fun deleteAllData()
 }
